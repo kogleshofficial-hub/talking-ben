@@ -831,6 +831,27 @@
       }
     });
 
+    async function checkApiReadiness() {
+      try {
+        const response = await fetch("/api/chat", { method: "GET", cache: "no-store" });
+        const data = await response.json();
+        if (response.ok && data.configured) {
+          setStatus("AI connected. Say something unexpected.", "ready");
+        } else {
+          setState("SETUP NEEDED");
+          topStatus.textContent = "AI SETUP NEEDED";
+          topDot.style.background = "#ffc98b";
+          statusText.textContent = "Add OPENAI_API_KEY in Vercel to enable real replies.";
+        }
+      } catch (error) {
+        setState("CONNECTION ISSUE");
+        topStatus.textContent = "CHECK CONNECTION";
+        topDot.style.background = "#ffc98b";
+        statusText.textContent = "Could not check AI setup. Typing and 3D demo are still here.";
+      }
+    }
+    checkApiReadiness();
+
     if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
       setStatus("Voice input varies by browser. Typing works everywhere.", "ready");
     }
