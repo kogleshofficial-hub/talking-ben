@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101722">
+  <meta name="description" content="Meet Milo: an original little 3D dog who listens, thinks, and talks back.">
+  <title>Milo — the 3D AI dog</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d121a;
+      --panel: rgba(20, 28, 40, .88);
+      --panel-strong: #151e2b;
+      --line: rgba(220, 234, 255, .11);
+      --text: #f1f5fb;
+      --muted: #9eacbf;
+      --mint: #7be1c3;
+      --cyan: #83d7e5;
+      --gold: #ffc98b;
+      --danger: #ff9d9d;
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; min-height: 100%; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { min-height: 100vh; overflow-x: hidden; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+    .app { min-height: 100vh; padding: 18px clamp(14px, 3vw, 36px) 14px; background: radial-gradient(ellipse at 16% 10%, rgba(40, 82, 91, .20), transparent 34%), radial-gradient(ellipse at 89% 85%, rgba(62, 67, 105, .19), transparent 36%), var(--bg); }
+    .topbar { max-width: 1460px; margin: 0 auto 18px; display: flex; align-items: center; gap: 12px; min-height: 54px; }
+    .brand-mark { width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; background: linear-gradient(145deg, #9bf0ce, #5db5be); color: #10232b; box-shadow: 0 8px 25px rgba(100, 218, 194, .12); font-weight: 950; font-size: 25px; letter-spacing: -2px; transform: rotate(-4deg); }
+    .brand-copy { display: flex; flex-direction: column; gap: 1px; }
+    .eyebrow { margin: 0; color: #89a7b3; font-size: 9px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    .brand-title { font-size: 21px; font-weight: 850; letter-spacing: -.06em; line-height: 1.2; }
+    .brand-title span { color: var(--mint); font-size: 12px; letter-spacing: .12em; margin-left: 4px; vertical-align: 3px; }
+    .top-status { margin-left: auto; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 9px 13px; color: #b8c6d7; font-size: 10px; font-weight: 700; letter-spacing: .07em; background: rgba(255,255,255,.025); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px rgba(123,225,195,.8); flex: 0 0 auto; }
+    .layout { max-width: 1460px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(330px, .88fr); gap: 18px; min-height: min(790px, calc(100vh - 105px)); }
+    .stage { position: relative; min-height: 650px; overflow: hidden; isolation: isolate; border: 1px solid rgba(222,239,255,.1); border-radius: 30px; background: radial-gradient(ellipse at 50% 44%, rgba(83, 148, 150, .19), transparent 38%), linear-gradient(150deg, #1d2c39, #111925 56%, #141a2a); box-shadow: 0 28px 80px rgba(0,0,0,.22); }
+    .stage:before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .28; background-image: linear-gradient(rgba(191,232,229,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(191,232,229,.04) 1px, transparent 1px); background-size: 39px 39px; mask-image: linear-gradient(to bottom, black, transparent 88%); }
+    .stage:after { content: ""; position: absolute; pointer-events: none; z-index: 0; inset: 0; border-radius: inherit; box-shadow: inset 0 -80px 100px rgba(7,12,19,.4), inset 0 0 80px rgba(150,213,212,.025); }
+    .stage-orbit { position: absolute; left: 50%; top: 54%; width: min(72%, 490px); aspect-ratio: 1; border: 1px solid rgba(143,225,214,.09); border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 70px rgba(95,202,192,.04), inset 0 0 70px rgba(95,202,192,.025); }
+    .stage-orbit:before, .stage-orbit:after { content: ""; position: absolute; inset: 11%; border: 1px dashed rgba(153,196,216,.10); border-radius: 50%; }
+    .stage-orbit:after { inset: 24%; border-style: solid; opacity: .7; }
+    #avatarCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; touch-action: pan-y; }
+    .stage-label { position: absolute; z-index: 3; top: 22px; left: 22px; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid rgba(211,239,240,.12); background: rgba(12,21,30,.45); backdrop-filter: blur(12px); border-radius: 999px; color: #c9d8df; font-size: 10px; font-weight: 750; letter-spacing: .09em; }
+    .stage-label .live-dot { width: 6px; height: 6px; background: var(--mint); border-radius: 50%; }
+    .stage-corner { position: absolute; right: 22px; top: 22px; z-index: 3; color: rgba(199,217,233,.45); font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; letter-spacing: .05em; }
+    .character-card { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 18px; display: flex; align-items: center; gap: 12px; padding: 15px 16px; border: 1px solid rgba(217,238,245,.13); border-radius: 20px; background: rgba(12,18,27,.76); backdrop-filter: blur(18px); box-shadow: 0 15px 40px rgba(0,0,0,.18); }
+    .character-avatar { width: 42px; height: 42px; border-radius: 14px; flex: 0 0 auto; display: grid; place-items: center; background: rgba(123,225,195,.13); color: var(--mint); font-size: 18px; }
+    .character-info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .character-info strong { font-size: 14px; letter-spacing: .13em; }
+    .character-info span { color: #a5b4c6; font-size: 11px; line-height: 1.4; }
+    .state-pill { margin-left: auto; flex: 0 0 auto; max-width: 115px; padding: 8px 10px; border: 1px solid rgba(123,225,195,.16); color: var(--mint); background: rgba(123,225,195,.06); border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .side-panel { display: flex; min-height: 650px; flex-direction: column; border: 1px solid rgba(222,239,255,.1); border-radius: 30px; background: rgba(18,25,36,.88); overflow: hidden; box-shadow: 0 28px 80px rgba(0,0,0,.15); }
+    .chat-header { padding: 27px 25px 19px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; gap: 12px; }
+    .chat-header-copy { min-width: 0; }
+    .chat-kicker { color: var(--mint); font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; margin: 0 0 10px; }
+    h1 { margin: 0; font-size: clamp(27px, 2.5vw, 38px); font-weight: 800; line-height: 1.04; letter-spacing: -.055em; }
+    .chat-subtitle { margin: 9px 0 0; max-width: 340px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+    .icon-button { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.035); color: #b6c5d4; cursor: pointer; transition: .18s ease; }
+    .icon-button:hover { background: rgba(255,255,255,.08); color: white; transform: translateY(-1px); }
+    .icon-button svg { width: 17px; height: 17px; }
+    .messages { flex: 1 1 auto; min-height: 220px; max-height: 48vh; overflow-y: auto; padding: 20px 22px 12px; display: flex; flex-direction: column; gap: 13px; scrollbar-width: thin; scrollbar-color: #3b4c5b transparent; }
+    .welcome { display: flex; flex-direction: column; gap: 15px; padding: 7px 2px 5px; }
+    .welcome-label { display: flex; align-items: center; gap: 8px; color: #9caec0; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: .13em; }
+    .welcome-label:after { content: ""; height: 1px; width: 38px; background: #354354; }
+    .welcome-text { margin: 0; font-size: 15px; line-height: 1.65; color: #e4ecf5; max-width: 400px; }
+    .quick-prompts { display: flex; flex-wrap: wrap; gap: 7px; }
+    .quick-prompt { border: 1px solid rgba(177,199,222,.14); background: rgba(255,255,255,.025); color: #b8cadb; font-size: 11px; line-height: 1.3; border-radius: 999px; padding: 9px 11px; cursor: pointer; transition: .15s; }
+    .quick-prompt:hover { color: var(--mint); border-color: rgba(123,225,195,.38); background: rgba(123,225,195,.05); }
+    .message { display: flex; flex-direction: column; gap: 5px; max-width: 91%; animation: pop-in .2s ease both; }
+    .message.user { align-self: flex-end; align-items: flex-end; }
+    .message.assistant { align-self: flex-start; align-items: flex-start; }
+    .message-author { font-size: 9px; color: #8f9fb2; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; padding: 0 5px; }
+    .message-bubble { padding: 12px 14px; border-radius: 17px; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .user .message-bubble { background: rgba(123,225,195,.12); border: 1px solid rgba(123,225,195,.13); color: #e6fff8; border-bottom-right-radius: 5px; }
+    .assistant .message-bubble { background: rgba(255,255,255,.047); border: 1px solid rgba(255,255,255,.055); color: #e1e9f3; border-bottom-left-radius: 5px; }
+    .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 14px 16px; }
+    .typing-indicator span { width: 5px; height: 5px; border-radius: 50%; background: var(--mint); animation: typing .9s infinite ease-in-out; }
+    .typing-indicator span:nth-child(2) { animation-delay: .12s; }
+    .typing-indicator span:nth-child(3) { animation-delay: .24s; }
+    .composer-wrap { border-top: 1px solid var(--line); padding: 16px 18px 18px; background: rgba(10,15,23,.34); }
+    .composer { display: flex; align-items: center; gap: 8px; border: 1px solid rgba(193,217,234,.15); background: rgba(7,12,20,.42); border-radius: 17px; padding: 7px 7px 7px 14px; }
+    .composer:focus-within { border-color: rgba(123,225,195,.45); box-shadow: 0 0 0 3px rgba(123,225,195,.055); }
+    #messageInput { min-width: 0; flex: 1; height: 39px; border: 0; outline: 0; padding: 0 2px; color: #f0f6fc; background: transparent; font-size: 13px; }
+    #messageInput::placeholder { color: #718095; }
+    .send-button { width: 39px; height: 39px; flex: 0 0 auto; border: 0; border-radius: 12px; background: var(--mint); color: #10202a; cursor: pointer; display: grid; place-items: center; transition: .18s; }
+    .send-button:hover { background: #a2f2d9; transform: translateY(-1px); }
+    .send-button:disabled { opacity: .4; cursor: default; transform: none; }
+    .send-button svg { width: 17px; height: 17px; }
+    .control-row { display: flex; gap: 8px; margin-top: 10px; }
+    .talk-button { display: flex; flex: 1; min-width: 0; justify-content: center; align-items: center; gap: 9px; border: 1px solid rgba(123,225,195,.22); border-radius: 15px; padding: 12px 13px; color: #dffff5; background: linear-gradient(120deg, rgba(90,196,166,.17), rgba(71,135,147,.15)); font-size: 12px; font-weight: 800; cursor: pointer; transition: .18s; }
+    .talk-button:hover { background: rgba(99,217,188,.2); border-color: rgba(123,225,195,.45); }
+    .talk-button.listening { background: rgba(255,133,133,.12); border-color: rgba(255,133,133,.3); color: #ffd7d7; }
+    .talk-button:disabled { opacity: .5; cursor: wait; }
+    .mic-icon { width: 17px; height: 17px; flex: 0 0 auto; }
+    .sound-button { flex: 0 0 46px; }
+    .hint-row { min-height: 22px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 2px 0; color: #78899c; font-size: 10px; line-height: 1.4; }
+    #statusText { overflow-wrap: anywhere; }
+    .tiny-action { border: 0; padding: 0; color: #8b9fb1; background: none; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(139,159,177,.35); font-size: 10px; white-space: nowrap; }
+    .tiny-action:hover { color: var(--mint); }
+    .footer { max-width: 1460px; margin: 14px auto 0; padding: 0 3px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: #637285; font-size: 9px; line-height: 1.55; letter-spacing: .015em; }
+    .footer strong { color: #8595a7; font-weight: 650; }
+    .toast { position: fixed; z-index: 20; left: 50%; bottom: 22px; transform: translate(-50%, 12px); padding: 11px 15px; max-width: calc(100vw - 28px); border: 1px solid rgba(199,229,229,.15); border-radius: 999px; background: #192533; color: #e8f4f8; box-shadow: 0 12px 36px rgba(0,0,0,.3); font-size: 12px; opacity: 0; pointer-events: none; transition: .22s; text-align: center; }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+    @keyframes pop-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes typing { 0%,60%,100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+    @media (max-width: 900px) {
+      .app { padding: 12px 12px 10px; }
+      .topbar { margin-bottom: 12px; }
+      .layout { grid-template-columns: minmax(0,1fr); gap: 12px; min-height: auto; }
+      .stage { min-height: 390px; height: 46vh; max-height: 560px; border-radius: 25px; }
+      .side-panel { min-height: 510px; border-radius: 25px; }
+      .messages { max-height: 45vh; min-height: 190px; }
+      .chat-header { padding: 22px 21px 16px; }
+      h1 { font-size: 30px; }
+      .footer { padding: 0 3px; }
+    }
+    @media (max-width: 480px) {
+      .topbar { gap: 9px; }
+      .brand-mark { width: 39px; height: 39px; border-radius: 13px; font-size: 23px; }
+      .brand-title { font-size: 19px; }
+      .top-status { padding: 8px 10px; font-size: 8px; gap: 6px; }
+      .stage { height: 42vh; min-height: 300px; max-height: 430px; }
+      .stage-label { left: 13px; top: 13px; font-size: 8px; padding: 8px 10px; }
+      .stage-corner { right: 13px; top: 13px; font-size: 8px; }
+      .character-card { left: 10px; right: 10px; bottom: 10px; padding: 12px; gap: 9px; border-radius: 17px; }
+      .character-avatar { width: 36px; height: 36px; border-radius: 12px; }
+      .character-info strong { font-size: 12px; }
+      .character-info span { font-size: 10px; }
+      .state-pill { padding: 7px 8px; font-size: 8px; max-width: 92px; }
+      .side-panel { min-height: 490px; }
+      .chat-header { padding: 20px 17px 15px; }
+      h1 { font-size: 29px; }
+      .chat-subtitle { font-size: 11px; }
+      .messages { padding: 18px 16px 12px; }
+      .composer-wrap { padding: 13px 12px 14px; }
+      .message { max-width: 95%; }
+      .footer { font-size: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *:before, *:after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">m</div>
+      <div class="brand-copy">
+        <p class="eyebrow">A little personality engine</p>
+        <div class="brand-title">milo <span>AI</span></div>
+      </div>
+      <div class="top-status"><span class="dot" id="onlineDot"></span><span id="topStatus">READY TO CHAT</span></div>
+    </header>
+
+    <main class="layout">
+      <section class="stage" id="stage" aria-label="Milo's interactive 3D scene">
+        <div class="stage-orbit" aria-hidden="true"></div>
+        <div class="stage-label"><span class="live-dot"></span><span>LIVE 3D CHARACTER</span></div>
+        <div class="stage-corner">SCENE 001<br>THE CHAT ROOM</div>
+        <canvas id="avatarCanvas" aria-label="Animated 3D cartoon dog"></canvas>
+        <div class="character-card">
+          <div class="character-avatar" aria-hidden="true">✳</div>
+          <div class="character-info">
+            <strong>MILO</strong>
+            <span>A curious dog with opinions.</span>
+          </div>
+          <div class="state-pill" id="characterState">IDLE · LISTENING</div>
+        </div>
+      </section>
+
+      <section class="side-panel" aria-label="Conversation with Milo">
+        <div class="chat-header">
+          <div class="chat-header-copy">
+            <p class="chat-kicker">Say anything. See what happens.</p>
+            <h1>Talk to Milo.</h1>
+            <p class="chat-subtitle">He's not reading from a script. Ask a weird question, tell him a joke, or start a real conversation.</p>
+          </div>
+          <button class="icon-button" id="shareButton" type="button" aria-label="Share this demo" title="Share this demo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.7 10.7 6.6-4.2M8.7 13.3l6.6 4.2"></path></svg>
+          </button>
+        </div>
+
+        <div class="messages" id="messages" aria-live="polite" aria-label="Chat messages">
+          <div class="welcome" id="welcome">
+            <div class="welcome-label">Try breaking the ice</div>
+            <p class="welcome-text">Hey. I'm Milo. I can talk about almost anything. Please make this interesting; I was in the middle of doing absolutely nothing.</p>
+            <div class="quick-prompts">
+              <button class="quick-prompt" type="button" data-prompt="Tell me a wild fact that sounds fake but is true.">Give me a wild fact</button>
+              <button class="quick-prompt" type="button" data-prompt="Roast my procrastination, but keep it funny.">Roast my procrastination</button>
+              <button class="quick-prompt" type="button" data-prompt="Ask me one unexpected question.">Ask me something</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer-wrap">
+          <form class="composer" id="chatForm">
+            <input id="messageInput" type="text" maxlength="900" placeholder="Say something to Milo..." autocomplete="off" aria-label="Your message">
+            <button class="send-button" id="sendButton" type="submit" aria-label="Send message">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+            </button>
+          </form>
+          <div class="control-row">
+            <button class="talk-button" id="talkButton" type="button">
+              <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"></path></svg>
+              <span id="talkButtonLabel">Tap to talk</span>
+            </button>
+            <button class="icon-button sound-button" id="soundButton" type="button" aria-label="Mute spoken replies" title="Mute spoken replies">
+              <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path></svg>
+            </button>
+          </div>
+          <div class="hint-row">
+            <span id="statusText">Ready when you are.</span>
+            <button class="tiny-action" id="clearButton" type="button">Clear chat</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span><strong>A tiny experiment by Koglesh R. Murugan.</strong> Built with Three.js + conversational AI.</span>
+      <span>Original character · Not affiliated with any existing virtual-pet franchise.</span>
+    </footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
+
+    const canvas = document.getElementById("avatarCanvas");
+    const stage = document.getElementById("stage");
+    const statePill = document.getElementById("characterState");
+    const statusText = document.getElementById("statusText");
+    const topStatus = document.getElementById("topStatus");
+    const topDot = document.getElementById("onlineDot");
+    const messagesElement = document.getElementById("messages");
+    const welcome = document.getElementById("welcome");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const chatForm = document.getElementById("chatForm");
+    const talkButton = document.getElementById("talkButton");
+    const talkButtonLabel = document.getElementById("talkButtonLabel");
+    const soundButton = document.getElementById("soundButton");
+    const soundIcon = document.getElementById("soundIcon");
+    const toastElement = document.getElementById("toast");
+
+    let toastTimer = null;
+    function showToast(message) {
+      toastElement.textContent = message;
+      toastElement.classList.add("visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastElement.classList.remove("visible"), 2600);
+    }
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 80);
+    camera.position.set(0, 2.1, 8.5);
+    camera.lookAt(0, 1.55, 0);
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
+    } catch (error) {
+      statusText.textContent = "3D graphics are not available in this browser.";
+      topStatus.textContent = "3D UNAVAILABLE";
+    }
+    if (!renderer) {
+      throw new Error("WebGL renderer could not be created.");
+    }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.65));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    scene.add(new THREE.HemisphereLight(0xd8f4ed, 0x384150, 2.15));
+    const keyLight = new THREE.DirectionalLight(0xffedcf, 3.0);
+    keyLight.position.set(-3.5, 6, 4);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(768, 768);
+    keyLight.shadow.camera.left = -4;
+    keyLight.shadow.camera.right = 4;
+    keyLight.shadow.camera.top = 5;
+    keyLight.shadow.camera.bottom = -2;
+    scene.add(keyLight);
+    const rimLight = new THREE.DirectionalLight(0x7de0d0, 2.1);
+    rimLight.position.set(4, 3, -3);
+    scene.add(rimLight);
+    const softLight = new THREE.PointLight(0x7f9eff, 1.15, 12);
+    softLight.position.set(0, 2.8, 3);
+    scene.add(softLight);
+
+    const mats = {
+      fur: new THREE.MeshStandardMaterial({ color: 0xd9975c, roughness: 0.78 }),
+      furLight: new THREE.MeshStandardMaterial({ color: 0xf3d5ac, roughness: 0.82 }),
+      furDark: new THREE.MeshStandardMaterial({ color: 0x91562f, roughness: 0.85 }),
+      ear: new THREE.MeshStandardMaterial({ color: 0x9d5c3d, roughness: 0.84 }),
+      eyeWhite: new THREE.MeshStandardMaterial({ color: 0xfff8e9, roughness: 0.35 }),
+      eye: new THREE.MeshStandardMaterial({ color: 0x30251f, roughness: 0.25 }),
+      nose: new THREE.MeshStandardMaterial({ color: 0x342a2a, roughness: 0.32 }),
+      mouth: new THREE.MeshStandardMaterial({ color: 0x3c2021, roughness: 0.7 }),
+      scarf: new THREE.MeshStandardMaterial({ color: 0x50cbb2, roughness: 0.48, metalness: 0.02 }),
+      scarfLight: new THREE.MeshStandardMaterial({ color: 0x9ff1d9, roughness: 0.55 }),
+      floor: new THREE.MeshStandardMaterial({ color: 0x243845, roughness: 0.95 }),
+      platform: new THREE.MeshStandardMaterial({ color: 0x334d59, roughness: 0.54, metalness: 0.22 }),
+      propBlue: new THREE.MeshStandardMaterial({ color: 0x6498bb, roughness: 0.35, metalness: 0.12 }),
+      propPink: new THREE.MeshStandardMaterial({ color: 0x9e8ed3, roughness: 0.45 }),
+      propGlass: new THREE.MeshStandardMaterial({ color: 0x7be1c3, roughness: 0.25, metalness: 0.08, transparent: true, opacity: 0.68 })
+    };
+
+    function addMesh(geometry, material, parent, position, scale, rotation) {
+      const mesh = new THREE.Mesh(geometry, material);
+      if (position) mesh.position.set(position[0], position[1], position[2]);
+      if (scale) mesh.scale.set(scale[0], scale[1], scale[2]);
+      if (rotation) mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      (parent || scene).add(mesh);
+      return mesh;
+    }
+    function sphere(parent, material, position, scale, rotation) {
+      return addMesh(new THREE.SphereGeometry(1, 28, 20), material, parent, position, scale, rotation);
+    }
+
+    const floor = addMesh(new THREE.CircleGeometry(9, 72), mats.floor, scene, [0, -0.03, -0.3], [1, 1, 1], [-Math.PI / 2, 0, 0]);
+    floor.receiveShadow = true;
+
+    const platform = addMesh(new THREE.CylinderGeometry(1.48, 1.62, 0.18, 64), mats.platform, scene, [0, 0.02, 0], [1, 1, 1]);
+    platform.castShadow = false;
+    addMesh(new THREE.TorusGeometry(1.48, 0.018, 8, 72), mats.sc arf || mats.scarf, scene, [0, 0.12, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
+    addMesh(new THREE.TorusGeometry(1.19, 0.012, 8, 72), mats.propBlue, scene, [0, 0.125, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
+
+    // Small original lab props give the scene depth without using copied game assets.
+    function addFlask(x, y, z, material, size) {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+      scene.add(group);
+      addMesh(new THREE.SphereGeometry(size * 0.42, 20, 16), material, group, [0, 0, 0], [1, 1, 0.78]);
+      addMesh(new THREE.CylinderGeometry(size * 0.13, size * 0.16, size * 0.5, 16), material, group, [0, size * 0.43, 0], [1, 1, 1]);
+      addMesh(new THREE.CylinderGeometry(size * 0.15, size * 0.15, size * 0.08, 16), mats.furLight, group, [0, size * 0.72, 0], [1, 1, 1]);
+      group.rotation.z = x < 0 ? 0.12 : -0.1;
+    }
+    addFlask(-2.05, 1.0, -1.5, mats.propBlue, 0.62);
+    addFlask(2.08, 0.94, -1.4, mats.propPink, 0.55);
+    addMesh(new THREE.BoxGeometry(0.86, 0.23, 0.42), mats.platform, scene, [-2.05, 0.4, -1.48], [1, 1, 1]);
+    addMesh(new THREE.BoxGeometry(0.75, 0.19, 0.38), mats.propBlue, scene, [-2.08, 0.6, -1.52], [1, 1, 1]);
+    addMesh(new THREE.BoxGeometry(0.74, 0.19, 0.38), mats.propPink, scene, [2.08, 0.35, -1.46], [1, 1, 1]);
+
+    const dustMaterial = new THREE.MeshBasicMaterial({ color: 0x8fe4d0, transparent: true, opacity: 0.46 });
+    const dust = [];
+    for (let i = 0; i < 20; i += 1) {
+      const particle = addMesh(new THREE.SphereGeometry(0.018 + Math.random() * 0.02, 8, 6), dustMaterial, scene,
+        [(Math.random() - 0.5) * 4.8, 0.8 + Math.random() * 3.2, -1.2 + Math.random() * 0.6], [1, 1, 1]);
+      particle.castShadow = false;
+      dust.push({ mesh: particle, offset: Math.random() * Math.PI * 2, speed: 0.2 + Math.random() * 0.35, height: particle.position.y });
+    }
+
+    const milo = new THREE.Group();
+    scene.add(milo);
+
+    // Body silhouette: an original honey-colored pup with a teal bandana and asymmetrical floppy ears.
+    const body = sphere(milo, mats.fur, [0, 1.13, -0.03], [0.61, 0.76, 0.48]);
+    body.rotation.z = -0.045;
+    sphere(milo, mats.furLight, [0, 1.02, 0.37], [0.39, 0.58, 0.19]);
+    const tailPivot = new THREE.Group();
+    tailPivot.position.set(0.02, 1.45, -0.37);
+    milo.add(tailPivot);
+    const tailCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0.09, 0.15, -0.16),
+      new THREE.Vector3(0.12, 0.4, -0.2),
+      new THREE.Vector3(-0.02, 0.48, -0.25)
+    ]);
+    addMesh(new THREE.TubeGeometry(tailCurve, 18, 0.095, 10, false), mats.fur, tailPivot, [0, 0, 0], [1, 1, 1]);
+    sphere(tailPivot, mats.furLight, [-0.02, 0.48, -0.25], [0.09, 0.09, 0.09]);
+
+    const legGroups = [];
+    [[-0.39, 0.52, 0.15], [0.39, 0.52, 0.15], [-0.42, 0.49, -0.28], [0.42, 0.49, -0.28]].forEach((p, index) => {
+      const leg = new THREE.Group();
+      leg.position.set(p[0], p[1], p[2]);
+      milo.add(leg);
+      addMesh(new THREE.CapsuleGeometry(0.145, 0.34, 4, 12), index < 2 ? mats.fur : mats.furDark, leg, [0, -0.13, 0], [1, 1, 1]);
+      sphere(leg, mats.furLight, [0.015, -0.33, 0.11], [0.18, 0.13, 0.23]);
+      legGroups.push(leg);
+    });
+
+    const neckBand = addMesh(new THREE.TorusGeometry(0.38, 0.09, 12, 36), mats.scarf, milo, [0, 1.7, 0.05], [1, 1, 1], [Math.PI / 2, 0, 0]);
+    const bandanaShape = new THREE.Shape();
+    bandanaShape.moveTo(-0.39, 0.12);
+    bandanaShape.lineTo(0.39, 0.12);
+    bandanaShape.lineTo(0, -0.49);
+    bandanaShape.closePath();
+    const bandana = addMesh(new THREE.ShapeGeometry(bandanaShape), mats.scarf, milo, [0, 1.67, 0.49], [1, 1, 1]);
+    const bandanaDot = sphere(milo, mats.scarfLight, [0, 1.67, 0.515], [0.045, 0.045, 0.035]);
+
+    const headPivot = new THREE.Group();
+    headPivot.position.set(0, 2.05, 0.05);
+    milo.add(headPivot);
+    sphere(headPivot, mats.fur, [0, 0, 0], [0.72, 0.79, 0.64]);
+    sphere(headPivot, mats.furLight, [0, -0.21, 0.43], [0.45, 0.33, 0.32]);
+    sphere(headPivot, mats.furLight, [-0.17, -0.24, 0.63], [0.25, 0.18, 0.19]);
+    sphere(headPivot, mats.furLight, [0.17, -0.24, 0.63], [0.25, 0.18, 0.19]);
+    sphere(headPivot, mats.nose, [0, -0.12, 0.80], [0.16, 0.105, 0.1]);
+    sphere(headPivot, mats.eyeWhite, [0, -0.07, 0.798], [0.046, 0.022, 0.025]);
+
+    const mouth = sphere(headPivot, mats.mouth, [0, -0.43, 0.69], [0.16, 0.035, 0.045]);
+    const mouthInner = sphere(headPivot, new THREE.MeshStandardMaterial({ color: 0xd46d79, roughness: 0.9 }), [0, -0.46, 0.716], [0.075, 0.015, 0.012]);
+    const smileCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.20, -0.39, 0.692),
+      new THREE.Vector3(-0.10, -0.435, 0.715),
+      new THREE.Vector3(0, -0.45, 0.72),
+      new THREE.Vector3(0.10, -0.435, 0.715),
+      new THREE.Vector3(0.20, -0.39, 0.692)
+    ]);
+    const smile = addMesh(new THREE.TubeGeometry(smileCurve, 18, 0.018, 6, false), mats.furDark, headPivot, [0, 0, 0], [1, 1, 1]);
+
+    const blinkGroups = [];
+    function addEye(x) {
+      const eye = new THREE.Group();
+      eye.position.set(x, 0.16, 0.545);
+      headPivot.add(eye);
+      sphere(eye, mats.eyeWhite, [0, 0, 0], [0.15, 0.19, 0.09]);
+      sphere(eye, mats.eye, [0.014, -0.005, 0.067], [0.081, 0.115, 0.045]);
+      sphere(eye, new THREE.MeshBasicMaterial({ color: 0xffffff }), [-0.012, 0.045, 0.107], [0.029, 0.035, 0.016]);
+      blinkGroups.push(eye);
+      const brow = addMesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+          new THREE.Vector3(x - 0.15, 0.38, 0.56),
+          new THREE.Vector3(x, 0.42, 0.61),
+          new THREE.Vector3(x + 0.15, 0.38, 0.56)
+        ]), 8, 0.035, 6, false),
+        mats.furDark, headPivot, [0, 0, 0], [1, 1, 1]
+      );
+      return brow;
+    }
+    addEye(-0.27);
+    addEye(0.27);
+
+    // One ear hangs lower than the other so Milo has a recognizable silhouette of his own.
+    const earLeft = sphere(headPivot, mats.ear, [-0.65, 0.03, -0.015], [0.255, 0.52, 0.205], [0, 0, 0.48]);
+    const earRight = sphere(headPivot, mats.furDark, [0.66, 0.11, -0.015], [0.22, 0.42, 0.18], [0, 0, -0.22]);
+    sphere(headPivot, mats.fur, [0, 0.69, -0.02], [0.20, 0.16, 0.18], [0, 0, 0.14]);
+    sphere(headPivot, mats.fur, [-0.13, 0.72, 0.015], [0.15, 0.13, 0.16], [0, 0, -0.30]);
+    sphere(headPivot, mats.fur, [0.13, 0.72, 0.015], [0.15, 0.13, 0.16], [0, 0, 0.30]);
+
+    // A few freckles add detail without relying on any franchise-specific model parts.
+    for (const p of [[-0.29,-0.25,0.71],[-0.35,-0.20,0.68],[0.29,-0.25,0.71],[0.35,-0.20,0.68]]) {
+      sphere(headPivot, mats.furDark, p, [0.025, 0.025, 0.018]);
+    }
+
+    // Resize and frame the renderer.
+    function resizeRenderer() {
+      const rect = stage.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.position.z = width < 520 ? 9.2 : 8.5;
+      camera.updateProjectionMatrix();
+    }
+    const resizeObserver = new ResizeObserver(resizeRenderer);
+    resizeObserver.observe(stage);
+    resizeRenderer();
+
+    let speaking = false;
+    let thinking = false;
+    let listening = false;
+    let muted = false;
+    let lastBlink = 0;
+    let blinkUntil = 0;
+    let lookX = 0;
+    let lookY = 0;
+    let excitedUntil = 0;
+
+    canvas.addEventListener("pointermove", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      lookX = (x - 0.5) * 0.24;
+      lookY = (y - 0.5) * 0.10;
+    });
+    canvas.addEventListener("pointerleave", () => { lookX = 0; lookY = 0; });
+    canvas.addEventListener("click", () => { excitedUntil = performance.now() + 800; });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+      const now = performance.now();
+      milo.position.y = 0.015 + Math.sin(t * 2.1) * (speaking ? 0.045 : 0.018);
+      milo.rotation.y = Math.sin(t * 0.55) * 0.055;
+      headPivot.rotation.y += (lookX - headPivot.rotation.y) * 0.035;
+      headPivot.rotation.x += ((-lookY + (speaking ? Math.sin(t * 5.7) * 0.035 : 0)) - headPivot.rotation.x) * 0.04;
+      headPivot.rotation.z = Math.sin(t * 0.9) * 0.018;
+      tailPivot.rotation.x = Math.sin(t * (speaking ? 12 : 3.3)) * (speaking ? 0.28 : 0.1);
+      tailPivot.rotation.z = Math.cos(t * (speaking ? 10 : 2.9)) * (speaking ? 0.22 : 0.07);
+      earLeft.rotation.z = 0.48 + Math.sin(t * 2.0) * 0.025 + (speaking ? Math.sin(t * 9) * 0.06 : 0);
+      earRight.rotation.z = -0.22 + Math.sin(t * 1.65 + 1) * 0.02 + (speaking ? Math.sin(t * 8 + 2) * 0.04 : 0);
+      if (speaking) {
+        mouth.scale.y = 0.04 + Math.abs(Math.sin(t * 14.5)) * 0.12;
+        mouthInner.scale.y = 0.02 + Math.abs(Math.sin(t * 14.5)) * 0.075;
+        smile.visible = false;
+      } else {
+        mouth.scale.y = 0.035;
+        mouthInner.scale.y = 0.012;
+        smile.visible = true;
+      }
+      if (now > lastBlink + 2100 + Math.random() * 1400 && now > blinkUntil) {
+        blinkUntil = now + 130;
+        lastBlink = now;
+      }
+      const blinkScale = now < blinkUntil ? 0.12 : 1;
+      blinkGroups.forEach((group) => { group.scale.y += (blinkScale - group.scale.y) * 0.7; });
+      if (now < excitedUntil) {
+        headPivot.rotation.z += Math.sin(t * 26) * 0.005;
+      }
+      dust.forEach((item) => {
+        item.mesh.position.y = item.height + Math.sin(t * item.speed + item.offset) * 0.13;
+        item.mesh.position.x += Math.sin(t * 0.3 + item.offset) * 0.0005;
+      });
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    const conversation = [];
+    let activeRequest = false;
+    let recognition = null;
+    let voicesReady = false;
+    let availableVoices = [];
+    let audioToken = 0;
+
+    function setState(value) {
+      statePill.textContent = value;
+    }
+    function setStatus(message, state) {
+      statusText.textContent = message;
+      if (state === "listening") {
+        setState("LISTENING");
+        topStatus.textContent = "LISTENING";
+        topDot.style.background = "#ffc98b";
+        talkButton.classList.add("listening");
+        talkButtonLabel.textContent = "Listening… tap to stop";
+      } else if (state === "thinking") {
+        setState("THINKING");
+        topStatus.textContent = "THINKING";
+        topDot.style.background = "#83d7e5";
+        talkButton.classList.remove("listening");
+        talkButtonLabel.textContent = "Tap to talk";
+      } else if (state === "speaking") {
+        setState("TALKING");
+        topStatus.textContent = "SPEAKING";
+        topDot.style.background = "#7be1c3";
+        talkButton.classList.remove("listening");
+        talkButtonLabel.textContent = "Tap to talk";
+      } else {
+        setState("IDLE · LISTENING");
+        topStatus.textContent = "READY TO CHAT";
+        topDot.style.background = "#7be1c3";
+        talkButton.classList.remove("listening");
+        talkButtonLabel.textContent = "Tap to talk";
+      }
+    }
+
+    function appendMessage(role, text) {
+      if (welcome && welcome.isConnected) welcome.remove();
+      const wrapper = document.createElement("div");
+      wrapper.className = "message " + role;
+      const author = document.createElement("div");
+      author.className = "message-author";
+      author.textContent = role === "user" ? "You" : "Milo";
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble";
+      bubble.textContent = text;
+      wrapper.append(author, bubble);
+      messagesElement.appendChild(wrapper);
+      messagesElement.scrollTop = messagesElement.scrollHeight;
+      return wrapper;
+    }
+
+    function appendThinking() {
+      if (welcome && welcome.isConnected) welcome.remove();
+      const wrapper = document.createElement("div");
+      wrapper.className = "message assistant";
+      wrapper.id = "thinkingBubble";
+      const author = document.createElement("div");
+      author.className = "message-author";
+      author.textContent = "Milo";
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble typing-indicator";
+      bubble.innerHTML = "<span></span><span></span><span></span>";
+      wrapper.append(author, bubble);
+      messagesElement.appendChild(wrapper);
+      messagesElement.scrollTop = messagesElement.scrollHeight;
+      return wrapper;
+    }
+
+    function loadVoices() {
+      availableVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+      voicesReady = true;
+    }
+    if ("speechSynthesis" in window) {
+      loadVoices();
+      window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    }
+
+    function speak(text) {
+      if (muted || !("speechSynthesis" in window)) {
+        speaking = false;
+        setStatus("Reply ready. Your browser has speech turned off or unavailable.", "ready");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const token = ++audioToken;
+      const utterance = new SpeechSynthesisUtterance(text);
+      const preferred = availableVoices.find((voice) => voice.lang === "en-US" && /natural|enhanced|premium/i.test(voice.name))
+        || availableVoices.find((voice) => voice.lang === "en-US")
+        || availableVoices.find((voice) => voice.lang && voice.lang.startsWith("en"));
+      if (preferred) utterance.voice = preferred;
+      utterance.rate = 0.97;
+      utterance.pitch = 0.92;
+      utterance.volume = 1;
+      utterance.onstart = () => {
+        if (token !== audioToken) return;
+        speaking = true;
+        setStatus("Milo is talking…", "speaking");
+      };
+      utterance.onend = () => {
+        if (token !== audioToken) return;
+        speaking = false;
+        setStatus("Your turn. Ask something else.", "ready");
+      };
+      utterance.onerror = () => {
+        if (token !== audioToken) return;
+        speaking = false;
+        setStatus("Reply received. Voice playback was unavailable.", "ready");
+      };
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function sendMessage(text) {
+      const message = String(text || "").trim();
+      if (!message || activeRequest) return;
+      if (message.length > 900) {
+        showToast("Keep your message under 900 characters.");
+        return;
+      }
+
+      activeRequest = true;
+      sendButton.disabled = true;
+      talkButton.disabled = true;
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      speaking = false;
+      appendMessage("user", message);
+      conversation.push({ role: "user", content: message });
+      messageInput.value = "";
+      messageInput.blur();
+      setStatus("Thinking of a reply…", "thinking");
+      const thinkingBubble = appendThinking();
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: conversation.slice(-10) })
+        });
+        const data = await response.json().catch(() => ({}));
+        thinkingBubble.remove();
+        if (!response.ok) {
+          const errorMessage = typeof data.error === "string" ? data.error : "The conversation service is not ready yet.";
+          appendMessage("assistant", errorMessage);
+          conversation.pop();
+          setStatus(errorMessage, "ready");
+          return;
+        }
+        const reply = String(data.reply || "").trim();
+        if (!reply) throw new Error("No reply returned.");
+        conversation.push({ role: "assistant", content: reply });
+        if (conversation.length > 12) conversation.splice(0, conversation.length - 12);
+        appendMessage("assistant", reply);
+        if (muted) {
+          setStatus("Reply ready. Your turn.", "ready");
+        } else {
+          speak(reply);
+        }
+      } catch (error) {
+        if (thinkingBubble.isConnected) thinkingBubble.remove();
+        conversation.pop();
+        const messageText = "I couldn't reach my conversation engine. Check the deployment's API setup and try again.";
+        appendMessage("assistant", messageText);
+        setStatus("Couldn't reach the conversation engine.", "ready");
+      } finally {
+        activeRequest = false;
+        sendButton.disabled = false;
+        talkButton.disabled = false;
+        messageInput.focus({ preventScroll: true });
+      }
+    }
+
+    chatForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (activeRequest) return;
+      const value = messageInput.value;
+      sendMessage(value);
+    });
+
+    document.querySelectorAll("[data-prompt]").forEach((button) => {
+      button.addEventListener("click", () => sendMessage(button.getAttribute("data-prompt")));
+    });
+
+    function createRecognition() {
+      const Recognizer = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Recognizer) return null;
+      const recognizer = new Recognizer();
+      recognizer.lang = "en-US";
+      recognizer.interimResults = false;
+      recognizer.maxAlternatives = 1;
+      recognizer.continuous = false;
+      recognizer.onstart = () => {
+        listening = true;
+        setStatus("I'm listening. Go on…", "listening");
+      };
+      recognizer.onresult = (event) => {
+        const transcript = event.results && event.results[0] && event.results[0][0]
+          ? event.results[0][0].transcript.trim() : "";
+        if (transcript) {
+          messageInput.value = transcript;
+          setStatus("Heard: " + transcript, "ready");
+          sendMessage(transcript);
+        } else {
+          setStatus("I didn't catch that. Try again or type it.", "ready");
+        }
+      };
+      recognizer.onerror = (event) => {
+        const labels = {
+          "not-allowed": "Microphone permission was blocked. You can type instead.",
+          "service-not-allowed": "Voice recognition is unavailable. Try typing instead.",
+          "no-speech": "I didn't hear anything. Tap to try again.",
+          "network": "The browser's voice service had a network issue. Typing still works."
+        };
+        setStatus(labels[event.error] || "Voice input stopped. You can type instead.", "ready");
+      };
+      recognizer.onend = () => {
+        listening = false;
+        if (!activeRequest && !speaking) {
+          talkButton.classList.remove("listening");
+          talkButtonLabel.textContent = "Tap to talk";
+          if (topStatus.textContent === "LISTENING") setStatus("Ready when you are.", "ready");
+        }
+      };
+      return recognizer;
+    }
+
+    talkButton.addEventListener("click", () => {
+      if (activeRequest) return;
+      if (listening && recognition) {
+        recognition.stop();
+        listening = false;
+        setStatus("Stopped listening.", "ready");
+        return;
+      }
+      if (!("speechSynthesis" in window)) {
+        // Voice input may work even if spoken output is absent.
+      }
+      recognition = createRecognition();
+      if (!recognition) {
+        showToast("Voice input isn't supported here. Type in the message box instead.");
+        setStatus("Voice input unsupported here. Typing works.", "ready");
+        messageInput.focus();
+        return;
+      }
+      try {
+        recognition.start();
+      } catch (error) {
+        setStatus("Voice input could not start. Try again or type instead.", "ready");
+      }
+    });
+
+    soundButton.addEventListener("click", () => {
+      muted = !muted;
+      if (muted && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        speaking = false;
+      }
+      soundButton.setAttribute("aria-label", muted ? "Enable spoken replies" : "Mute spoken replies");
+      soundButton.title = muted ? "Enable spoken replies" : "Mute spoken replies";
+      soundIcon.innerHTML = muted
+        ? '<path d="M11 5 6 9H3v6h3l5 4z"></path><path d="m17 9 5 6m0-6-5 6"></path>'
+        : '<path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path>';
+      showToast(muted ? "Spoken replies muted." : "Spoken replies enabled.");
+    });
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+      conversation.length = 0;
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      speaking = false;
+      messagesElement.innerHTML = "";
+      const newWelcome = document.createElement("div");
+      newWelcome.className = "welcome";
+      const label = document.createElement("div");
+      label.className = "welcome-label";
+      label.textContent = "Fresh start";
+      const intro = document.createElement("p");
+      intro.className = "welcome-text";
+      intro.textContent = "Round two. Go on, surprise me.";
+      newWelcome.append(label, intro);
+      messagesElement.appendChild(newWelcome);
+      setStatus("Chat cleared. Ready for a fresh start.", "ready");
+    });
+
+    document.getElementById("shareButton").addEventListener("click", async () => {
+      const shareData = {
+        title: "Milo — the 3D AI dog",
+        text: "I found a little 3D dog who actually talks back. Try chatting with Milo!",
+        url: window.location.href
+      };
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(window.location.href);
+          showToast("Link copied. Send Milo to a friend.");
+        } else {
+          showToast("Open the page in your browser to share its link.");
+        }
+      } catch (error) {
+        if (error && error.name !== "AbortError") showToast("Couldn't open the share menu.");
+      }
+    });
+
+    if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
+      setStatus("Voice input varies by browser. Typing works everywhere.", "ready");
+    }
+  </script>
+</body>
+</html>
