@@ -143,6 +143,202 @@
     @media (prefers-reduced-motion: reduce) {
       *, *:before, *:after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
+
+    /* --- Cozy virtual-pet game redesign: original Milo art, game-first layout --- */
+    :root {
+      color-scheme: light;
+      --bg: #cbdc9b;
+      --panel: rgba(255, 250, 230, .97);
+      --panel-strong: #fff4d7;
+      --line: rgba(98, 73, 45, .2);
+      --text: #3e2b24;
+      --muted: #7c6452;
+      --mint: #3c9b79;
+      --cyan: #6da8b2;
+      --gold: #efa744;
+      --danger: #c95a4b;
+      --radius: 24px;
+    }
+    html, body {
+      width: 100%; height: 100%; min-height: 100%;
+      overflow: hidden; background: #c7d995; color: #3e2b24;
+    }
+    body { min-height: 100dvh; }
+    .app {
+      width: 100%; height: 100dvh; min-height: 100dvh; padding: 0;
+      overflow: hidden; position: relative;
+      background: linear-gradient(180deg,#d9e7ac 0%,#d1df9e 57%,#a8794e 57.1%,#8f5e39 100%);
+    }
+    .topbar {
+      position: absolute; z-index: 9; top: max(12px,env(safe-area-inset-top)); left: 14px; right: 14px;
+      max-width: none; margin: 0; min-height: 58px; padding: 8px 10px;
+      border: 2px solid rgba(255,255,255,.66); border-radius: 22px;
+      background: rgba(255,249,225,.91); box-shadow: 0 5px 0 rgba(92,59,38,.14),0 12px 30px rgba(50,41,26,.11);
+      backdrop-filter: blur(12px); gap: 10px;
+    }
+    .brand-mark {
+      width: 42px; height: 42px; border-radius: 15px; background: linear-gradient(145deg,#f2c56e,#df8b4e);
+      color: #fffaf0; font-size: 24px; box-shadow: inset 0 -3px 0 rgba(115,62,33,.15),0 3px 0 rgba(119,74,42,.12);
+    }
+    .eyebrow { color: #8a6b4e; font-size: 8px; letter-spacing: .16em; }
+    .brand-title { color: #503528; font-size: 21px; letter-spacing: -.045em; }
+    .brand-title span { color: #318c70; font-size: 10px; }
+    .top-status {
+      margin-left: auto; padding: 8px 10px; background: #e9f4cf; color: #3c7559;
+      border: 1px solid #cadcad; font-size: 8px; letter-spacing: .04em;
+    }
+    .top-status .dot { background: #3c9b79; box-shadow: 0 0 0 3px rgba(60,155,121,.12); }
+    .topbar-actions { display: flex; align-items: center; gap: 7px; }
+    .game-top-button {
+      border: 1px solid rgba(126,83,47,.24); border-radius: 14px; padding: 10px 12px;
+      color: #573a2b; background: linear-gradient(#fffdf3,#f4dfb7);
+      box-shadow: 0 3px 0 #ddbd8d; cursor: pointer; font-weight: 900; font-size: 10px;
+      letter-spacing: .07em; white-space: nowrap; transition: transform .14s, box-shadow .14s;
+    }
+    .game-top-button:hover { transform: translateY(-1px); box-shadow: 0 4px 0 #ddbd8d; }
+    .game-top-button:active { transform: translateY(2px); box-shadow: 0 1px 0 #ddbd8d; }
+    .layout { display: block; width: 100%; height: 100%; min-height: 100dvh; max-width: none; margin: 0; }
+    .stage {
+      position: absolute; inset: 0; width: 100%; height: 100dvh; min-height: 0; max-height: none;
+      border: 0; border-radius: 0; overflow: hidden; background: #d5e5a3; box-shadow: none;
+    }
+    .stage:before { display: none; }
+    .stage:after {
+      border-radius: 0; box-shadow: inset 0 0 0 5px rgba(255,250,226,.25),inset 0 -100px 110px rgba(74,49,29,.13);
+      background: linear-gradient(180deg,rgba(255,255,255,.05) 0%,transparent 45%,rgba(103,64,35,.05) 100%);
+    }
+    .stage-orbit { display: none; }
+    #avatarCanvas { z-index: 1; }
+    .stage-label { display: none; }
+    .stage-corner { display: none; }
+    .character-card {
+      left: 18px; right: auto; bottom: 106px; width: min(330px,calc(100vw - 36px));
+      padding: 10px 12px; gap: 10px; border: 2px solid rgba(255,255,255,.7);
+      border-radius: 19px; background: rgba(255,248,224,.91); backdrop-filter: blur(12px);
+      box-shadow: 0 4px 0 rgba(104,68,41,.13),0 12px 28px rgba(68,45,29,.12);
+    }
+    .character-avatar { width: 36px; height: 36px; border-radius: 12px; color: #3e8b6b; background: #e2efc5; font-size: 19px; }
+    .character-info strong { color: #4d3425; letter-spacing: .12em; }
+    .character-info span { color: #80674f; }
+    .state-pill { color: #3a8060; background: #eaf5d4; border: 1px solid #cadfbe; font-size: 8px; }
+    .game-bubble {
+      position: absolute; z-index: 6; top: 24%; left: 50%; transform: translate(-50%,8px) scale(.98);
+      width: max-content; max-width: min(390px,calc(100vw - 34px)); padding: 13px 18px;
+      border: 2px solid #8f6a48; border-radius: 24px; background: #fff9e8; color: #50382b;
+      box-shadow: 0 4px 0 rgba(88,57,34,.18),0 14px 35px rgba(67,47,27,.13);
+      text-align: center; font-size: 13px; line-height: 1.45; font-weight: 750;
+      opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+    }
+    .game-bubble:after {
+      content: ""; position: absolute; bottom: -10px; left: 50%; width: 17px; height: 17px;
+      background: #fff9e8; border-right: 2px solid #8f6a48; border-bottom: 2px solid #8f6a48;
+      transform: translateX(-50%) rotate(45deg);
+    }
+    .game-bubble.visible { opacity: 1; transform: translate(-50%,0) scale(1); }
+    .game-controls {
+      position: absolute; z-index: 8; left: 50%; bottom: max(14px,env(safe-area-inset-bottom)); transform: translateX(-50%);
+      width: min(610px,calc(100vw - 22px)); display: flex; align-items: stretch; justify-content: space-around;
+      gap: clamp(5px,1.7vw,12px); padding: 11px 12px 9px;
+      border: 2px solid rgba(255,255,255,.75); border-radius: 27px;
+      background: rgba(255,249,228,.94); backdrop-filter: blur(14px);
+      box-shadow: 0 5px 0 rgba(91,61,39,.15),0 18px 38px rgba(65,44,28,.18);
+    }
+    .game-action {
+      min-width: 0; width: 76px; flex: 1 1 0; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 6px; padding: 2px 2px 4px; cursor: pointer; border: 0; background: transparent;
+      color: #76533b; transition: transform .14s;
+    }
+    .game-action:hover { transform: translateY(-3px); }
+    .game-action:active { transform: translateY(1px) scale(.98); }
+    .action-icon {
+      width: clamp(43px,6.5vw,56px); height: clamp(43px,6.5vw,56px); display: grid; place-items: center;
+      border-radius: 50%; border: 2px solid rgba(255,255,255,.8);
+      color: #fffaf0; background: linear-gradient(145deg,#8ec7a2,#438c76);
+      box-shadow: 0 4px 0 #36745f,inset 0 2px 0 rgba(255,255,255,.35); font-size: 22px;
+    }
+    .game-action:nth-child(1) .action-icon { background: linear-gradient(145deg,#e9bd6b,#ce7d49); box-shadow:0 4px 0 #a45c39,inset 0 2px 0 rgba(255,255,255,.35); }
+    .game-action:nth-child(2) .action-icon { background: linear-gradient(145deg,#edaa9c,#c96b67); box-shadow:0 4px 0 #a84f4b,inset 0 2px 0 rgba(255,255,255,.35); }
+    .game-action:nth-child(4) .action-icon { background: linear-gradient(145deg,#9ac3df,#648fb3); box-shadow:0 4px 0 #4b7195,inset 0 2px 0 rgba(255,255,255,.35); }
+    .game-action:nth-child(5) .action-icon { background: linear-gradient(145deg,#b9bbeb,#7b7dc4); box-shadow:0 4px 0 #5b5fa1,inset 0 2px 0 rgba(255,255,255,.35); }
+    .game-action-main .action-icon { width: clamp(51px,7vw,62px); height: clamp(51px,7vw,62px); font-size: 25px; background: linear-gradient(145deg,#8bd2b0,#33916e); box-shadow: 0 5px 0 #287452,inset 0 2px 0 rgba(255,255,255,.4); }
+    .action-label { font-size: 9px; font-weight: 950; letter-spacing: .1em; line-height: 1; color: #6b4a34; }
+    .side-panel {
+      display: none; position: absolute; z-index: 12; top: 82px; right: 16px; bottom: 108px;
+      width: min(390px,calc(100vw - 28px)); min-height: 250px; max-height: none; height: auto;
+      border: 2px solid rgba(255,255,255,.76); border-radius: 24px; background: rgba(255,250,231,.97);
+      box-shadow: 0 5px 0 rgba(91,61,39,.12),0 20px 60px rgba(65,44,28,.25); overflow: hidden;
+    }
+    .side-panel.game-chat-open { display: flex; }
+    .chat-header { padding: 17px 16px 13px; border-bottom: 1px solid rgba(110,83,54,.14); gap: 8px; }
+    .chat-kicker { color: #43896a; font-size: 8px; margin: 0 0 7px; }
+    h1 { color: #52392a; font-size: 27px; }
+    .chat-subtitle { color: #876f57; font-size: 10px; margin-top: 5px; line-height: 1.4; }
+    .icon-button { border-color: rgba(112,84,53,.15); background: #f8eed5; color: #74553c; border-radius: 12px; }
+    .chat-close-button { font-size: 22px; line-height: 1; font-weight: 500; }
+    .messages { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; padding: 14px 15px 9px; }
+    .welcome { gap: 10px; }
+    .welcome-label { color: #618268; font-size: 8px; }
+    .welcome-text { color: #604834; font-size: 13px; line-height: 1.5; }
+    .quick-prompt { border-color: #e5d2ac; background: #fff7e4; color: #75543b; font-size: 10px; padding: 8px 10px; }
+    .quick-prompt:hover { color: #2e7c5d; border-color: #9fc6a7; background: #eff7df; }
+    .message-author { color: #8b755a; font-size: 8px; }
+    .message-bubble { font-size: 12px; padding: 10px 12px; }
+    .user .message-bubble { color: #245440; background: #e4f3dc; border-color: #d0e4c5; }
+    .assistant .message-bubble { color: #5b4430; background: #fff5df; border-color: #ebddc2; }
+    .composer-wrap { flex: 0 0 auto; border-top: 1px solid rgba(110,83,54,.14); padding: 10px 12px 11px; background: rgba(245,231,200,.48); }
+    .composer { background: #fffdf4; border: 1px solid #e1d0b1; border-radius: 14px; padding: 5px 6px 5px 11px; }
+    .composer:focus-within { border-color: #83b69a; box-shadow: 0 0 0 3px rgba(94,163,119,.1); }
+    #messageInput { height: 34px; color: #4e392b; font-size: 12px; }
+    #messageInput::placeholder { color: #a7957d; }
+    .send-button { border-radius: 10px; width: 36px; height: 36px; background: #5da582; color: white; }
+    .talk-button { color: #2f644b; background: #e3f1d8; border-color: #c2dcc0; border-radius: 12px; padding: 10px; font-size: 11px; }
+    .talk-button:hover { background: #d6eacb; }
+    .talk-button.listening { color: #944840; background: #f8dddd; border-color: #ecc1bd; }
+    .hint-row { font-size: 9px; color: #9b8568; padding-top: 7px; }
+    .tiny-action { color: #7e654d; font-size: 9px; }
+    .footer { display: none; }
+    .toast {
+      z-index: 20; bottom: 105px; border: 1px solid rgba(255,255,255,.75); border-radius: 15px;
+      background: #fff8e5; color: #543b2b; box-shadow: 0 4px 0 rgba(87,60,36,.13),0 12px 30px rgba(61,43,28,.18);
+    }
+    @media (max-width: 680px) {
+      .topbar { left: 9px; right: 9px; top: max(8px,env(safe-area-inset-top)); min-height: 52px; padding: 6px 7px; gap: 7px; border-radius: 18px; }
+      .brand-mark { width: 34px; height: 34px; border-radius: 11px; font-size: 21px; }
+      .eyebrow { font-size: 6px; letter-spacing: .12em; }
+      .brand-title { font-size: 18px; }
+      .top-status { display: none; }
+      .topbar-actions { gap: 5px; margin-left: auto; }
+      .game-top-button { padding: 9px 10px; border-radius: 12px; font-size: 9px; }
+      .game-top-button span { display: inline; }
+      .stage { min-height: 0; }
+      .character-card { left: 10px; bottom: 99px; width: min(270px,calc(100vw - 20px)); padding: 8px 10px; border-radius: 16px; }
+      .character-info strong { font-size: 11px; }
+      .character-info span { font-size: 9px; }
+      .state-pill { max-width: 85px; font-size: 7px; padding: 6px 7px; }
+      .game-bubble { top: 22%; padding: 10px 13px; font-size: 11px; }
+      .game-controls { bottom: max(8px,env(safe-area-inset-bottom)); width: calc(100vw - 14px); padding: 8px 5px 7px; border-radius: 22px; gap: 1px; }
+      .game-action { gap: 5px; }
+      .action-icon { width: clamp(37px,11vw,47px); height: clamp(37px,11vw,47px); font-size: 19px; }
+      .game-action-main .action-icon { width: clamp(43px,12vw,53px); height: clamp(43px,12vw,53px); font-size: 22px; }
+      .action-label { font-size: 7px; letter-spacing: .07em; }
+      .side-panel { left: 9px; right: 9px; top: 69px; bottom: 99px; width: auto; border-radius: 20px; }
+      .chat-header { padding: 13px 12px 11px; }
+      h1 { font-size: 23px; }
+      .chat-subtitle { display: none; }
+      .messages { padding: 10px 11px 6px; }
+      .composer-wrap { padding: 8px 9px 9px; }
+      .footer { display: none; }
+      .toast { bottom: 100px; }
+    }
+    @media (max-width: 365px) {
+      .brand-copy .eyebrow { display: none; }
+      .brand-title { font-size: 17px; }
+      .game-top-button { padding: 8px; }
+      .action-label { font-size: 6px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .game-action, .game-top-button { transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -154,6 +350,10 @@
         <div class="brand-title">milo <span>AI</span></div>
       </div>
       <div class="top-status"><span class="dot" id="onlineDot"></span><span id="topStatus">LOCAL AI · NO API</span></div>
+      <div class="topbar-actions">
+        <button class="game-top-button" id="chatToggle" type="button" aria-label="Open chat with Milo">💬 <span>CHAT</span></button>
+        <button class="game-top-button" id="roomToggle" type="button" aria-label="Switch to the science room">⚗️ <span>LAB</span></button>
+      </div>
     </header>
 
     <main class="layout">
@@ -162,6 +362,24 @@
         <div class="stage-label"><span class="live-dot"></span><span>LIVE 3D CHARACTER</span></div>
         <div class="stage-corner">SCENE 001<br>THE CHAT ROOM</div>
         <canvas id="avatarCanvas" aria-label="Animated 3D cartoon dog"></canvas>
+        <div class="game-bubble" id="gameBubble" role="status" aria-live="polite">Milo's pretending not to notice you.</div>
+        <div class="game-controls" aria-label="Interact with Milo">
+          <button class="game-action" id="petButton" type="button" aria-label="Pet Milo">
+            <span class="action-icon" aria-hidden="true">🐾</span><span class="action-label">PET</span>
+          </button>
+          <button class="game-action" id="tickleButton" type="button" aria-label="Play with Milo">
+            <span class="action-icon" aria-hidden="true">✦</span><span class="action-label">PLAY</span>
+          </button>
+          <button class="game-action game-action-main" id="gameTalkButton" type="button" aria-label="Talk to Milo">
+            <span class="action-icon" aria-hidden="true">🎙️</span><span class="action-label">TALK</span>
+          </button>
+          <button class="game-action" id="phoneButton" type="button" aria-label="Call Milo">
+            <span class="action-icon" aria-hidden="true">☎</span><span class="action-label">CALL</span>
+          </button>
+          <button class="game-action" id="labToggleBottom" type="button" aria-label="Switch to the science room">
+            <span class="action-icon" aria-hidden="true">⚗️</span><span class="action-label">LAB</span>
+          </button>
+        </div>
         <div class="character-card">
           <div class="character-avatar" aria-hidden="true">✳</div>
           <div class="character-info">
@@ -172,13 +390,14 @@
         </div>
       </section>
 
-      <section class="side-panel" aria-label="Conversation with Milo">
+      <section class="side-panel" id="chatPanel" aria-label="Conversation with Milo" aria-hidden="true">
         <div class="chat-header">
           <div class="chat-header-copy">
             <p class="chat-kicker">Say anything. See what happens.</p>
             <h1>Talk to Milo.</h1>
             <p class="chat-subtitle">No paid AI API. Milo runs a small language model on your device. The first model download can be large; a compatible WebGPU browser is required.</p>
           </div>
+          <button class="icon-button chat-close-button" id="chatClose" type="button" aria-label="Close chat" title="Close chat">×</button>
           <button class="icon-button" id="shareButton" type="button" aria-label="Share this demo" title="Share this demo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.7 10.7 6.6-4.2M8.7 13.3l6.6 4.2"></path></svg>
           </button>
