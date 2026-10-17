@@ -153,7 +153,7 @@
         <p class="eyebrow">A little personality engine</p>
         <div class="brand-title">milo <span>AI</span></div>
       </div>
-      <div class="top-status"><span class="dot" id="onlineDot"></span><span id="topStatus">READY TO CHAT</span></div>
+      <div class="top-status"><span class="dot" id="onlineDot"></span><span id="topStatus">LOCAL AI · NO API</span></div>
     </header>
 
     <main class="layout">
@@ -177,7 +177,7 @@
           <div class="chat-header-copy">
             <p class="chat-kicker">Say anything. See what happens.</p>
             <h1>Talk to Milo.</h1>
-            <p class="chat-subtitle">He's not reading from a script. Ask a weird question, tell him a joke, or start a real conversation.</p>
+            <p class="chat-subtitle">No paid AI API. Milo runs a small language model on your device. The first model download can be large; a compatible WebGPU browser is required.</p>
           </div>
           <button class="icon-button" id="shareButton" type="button" aria-label="Share this demo" title="Share this demo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.7 10.7 6.6-4.2M8.7 13.3l6.6 4.2"></path></svg>
@@ -213,7 +213,7 @@
             </button>
           </div>
           <div class="hint-row">
-            <span id="statusText">Ready when you are.</span>
+            <span id="statusText">Free local AI · first model download may be large.</span>
             <button class="tiny-action" id="clearButton" type="button">Clear chat</button>
           </div>
         </div>
@@ -221,7 +221,7 @@
     </main>
 
     <footer class="footer">
-      <span><strong>A tiny experiment by Koglesh R. Murugan.</strong> Built with Three.js + conversational AI.</span>
+      <span><strong>A tiny experiment by Koglesh R. Murugan.</strong> Built with Three.js + on-device AI.</span>
       <span>Original character · Not affiliated with any existing virtual-pet franchise.</span>
     </footer>
   </div>
@@ -641,6 +641,65 @@
       window.speechSynthesis.speak(utterance);
     }
 
+    const LOCAL_MODEL_ID = "SmolLM2-360M-Instruct-q4f32_1-MLC";
+    const LOCAL_SYSTEM_PROMPT = [
+      "You are Milo, an original fictional cartoon dog in a playful voice-chat demo.",
+      "You are curious, expressive, lightly sarcastic, warm, clever, and funny without being cruel.",
+      "Use short, natural spoken replies, usually one or two sentences. React specifically to the user's message instead of repeating a catchphrase.",
+      "Avoid formal help-desk language, lists, and overly long explanations. Match the user's language where possible.",
+      "Be honest about uncertainty, and do not pretend you can see or hear anything beyond what the user shares.",
+      "Keep replies suitable for a general audience, including teenagers. Do not encourage dangerous challenges, harassment, or harm.",
+      "Return only the words Milo should speak. No markdown, labels, or stage directions."
+    ].join(" ");
+    let localEngine = null;
+    let localEnginePromise = null;
+
+    async function ensureLocalEngine() {
+      if (localEngine) return localEngine;
+      if (localEnginePromise) return localEnginePromise;
+
+      localEnginePromise = (async () => {
+        if (!("gpu" in navigator)) {
+          throw new Error("WEBGPU_UNAVAILABLE");
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) {
+          throw new Error("WEBGPU_UNAVAILABLE");
+        }
+
+        setStatus("Loading Milo's local AI engine…", "thinking");
+        const webllm = await import("https://esm.run/@mlc-ai/web-llm@0.2.85");
+        const engine = await webllm.CreateMLCEngine(LOCAL_MODEL_ID, {
+          logLevel: "WARN",
+          initProgressCallback: (report) => {
+            const progressText = report && typeof report.text === "string"
+              ? report.text
+              : "Downloading and preparing the local model…";
+            setStatus(progressText, "thinking");
+          }
+        }, {
+          context_window_size: 2048
+        });
+
+        localEngine = engine;
+        setStatus("Local AI loaded. Milo is ready.", "ready");
+        return localEngine;
+      })().catch((error) => {
+        localEnginePromise = null;
+        throw error;
+      });
+
+      return localEnginePromise;
+    }
+
+    function localAiErrorMessage(error) {
+      if (error && error.message === "WEBGPU_UNAVAILABLE") {
+        return "This browser or device doesn't support the WebGPU needed for Milo's local AI. Try an up-to-date compatible Chrome or Edge browser on a supported device. No cloud AI fallback or paid API is used.";
+      }
+      return "Milo couldn't load or run the local model. Check your connection, make sure the browser has enough free memory, then refresh and try again. The first download can be large; no API key or inference credits are involved.";
+    }
+
     async function sendMessage(text) {
       const message = String(text || "").trim();
       if (!message || activeRequest) return;
@@ -658,26 +717,27 @@
       conversation.push({ role: "user", content: message });
       messageInput.value = "";
       messageInput.blur();
-      setStatus("Thinking of a reply…", "thinking");
+      setStatus("Getting Milo's local AI ready…", "thinking");
       const thinkingBubble = appendThinking();
 
       try {
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: conversation.slice(-10) })
+        const engine = await ensureLocalEngine();
+        setStatus("Milo is thinking on your device…", "thinking");
+        const result = await engine.chat.completions.create({
+          messages: [
+            { role: "system", content: LOCAL_SYSTEM_PROMPT },
+            ...conversation.slice(-8)
+          ],
+          temperature: 0.85,
+          top_p: 0.9,
+          max_tokens: 112,
+          stream: false
         });
-        const data = await response.json().catch(() => ({}));
+
         thinkingBubble.remove();
-        if (!response.ok) {
-          const errorMessage = typeof data.error === "string" ? data.error : "The conversation service is not ready yet.";
-          appendMessage("assistant", errorMessage);
-          conversation.pop();
-          setStatus(errorMessage, "ready");
-          return;
-        }
-        const reply = String(data.reply || "").trim();
-        if (!reply) throw new Error("No reply returned.");
+        const reply = String(result?.choices?.[0]?.message?.content || "").trim();
+        if (!reply) throw new Error("EMPTY_LOCAL_REPLY");
+
         conversation.push({ role: "assistant", content: reply });
         if (conversation.length > 12) conversation.splice(0, conversation.length - 12);
         appendMessage("assistant", reply);
@@ -689,14 +749,13 @@
       } catch (error) {
         if (thinkingBubble.isConnected) thinkingBubble.remove();
         conversation.pop();
-        const messageText = "I couldn't reach my conversation engine. Check the deployment's API setup and try again.";
-        appendMessage("assistant", messageText);
-        setStatus("Couldn't reach the conversation engine.", "ready");
+        const friendlyMessage = localAiErrorMessage(error);
+        appendMessage("assistant", friendlyMessage);
+        setStatus(friendlyMessage, "ready");
       } finally {
         activeRequest = false;
         sendButton.disabled = false;
         talkButton.disabled = false;
-        messageInput.focus({ preventScroll: true });
       }
     }
 
@@ -831,26 +890,10 @@
       }
     });
 
-    async function checkApiReadiness() {
-      try {
-        const response = await fetch("/api/chat", { method: "GET", cache: "no-store" });
-        const data = await response.json();
-        if (response.ok && data.configured) {
-          setStatus("AI connected. Say something unexpected.", "ready");
-        } else {
-          setState("SETUP NEEDED");
-          topStatus.textContent = "AI SETUP NEEDED";
-          topDot.style.background = "#ffc98b";
-          statusText.textContent = "Add OPENAI_API_KEY in Vercel to enable real replies.";
-        }
-      } catch (error) {
-        setState("CONNECTION ISSUE");
-        topStatus.textContent = "CHECK CONNECTION";
-        topDot.style.background = "#ffc98b";
-        statusText.textContent = "Could not check AI setup. Typing and 3D demo are still here.";
-      }
-    }
-    checkApiReadiness();
+    // AI runs in this browser; no backend, API key, or metered inference endpoint is called.
+    setState("LOCAL AI · NOT LOADED");
+    topStatus.textContent = "LOCAL AI · NO API";
+    statusText.textContent = "Free local AI. First model download may be large.";
 
     if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
       setStatus("Voice input varies by browser. Typing works everywhere.", "ready");
