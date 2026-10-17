@@ -465,8 +465,39 @@
     const soundButton = document.getElementById("soundButton");
     const soundIcon = document.getElementById("soundIcon");
     const toastElement = document.getElementById("toast");
+    const gameBubble = document.getElementById("gameBubble");
+    const chatPanel = document.getElementById("chatPanel");
+    const chatToggle = document.getElementById("chatToggle");
+    const chatClose = document.getElementById("chatClose");
+    const roomToggle = document.getElementById("roomToggle");
+    const labToggleBottom = document.getElementById("labToggleBottom");
+    const petButton = document.getElementById("petButton");
+    const tickleButton = document.getElementById("tickleButton");
+    const gameTalkButton = document.getElementById("gameTalkButton");
+    const phoneButton = document.getElementById("phoneButton");
 
     let toastTimer = null;
+    let gameBubbleTimer = null;
+    function showGameBubble(message) {
+      if (!gameBubble) return;
+      gameBubble.textContent = message;
+      gameBubble.classList.add("visible");
+      clearTimeout(gameBubbleTimer);
+      gameBubbleTimer = setTimeout(() => gameBubble.classList.remove("visible"), 3800);
+    }
+    function openChatPanel(open = true) {
+      if (!chatPanel) return;
+      chatPanel.classList.toggle("game-chat-open", open);
+      chatPanel.setAttribute("aria-hidden", String(!open));
+      if (chatToggle) {
+        chatToggle.setAttribute("aria-label", open ? "Close chat with Milo" : "Open chat with Milo");
+      }
+      if (open) {
+        window.setTimeout(() => messageInput.focus({ preventScroll: true }), 180);
+      } else if (document.activeElement && chatPanel.contains(document.activeElement)) {
+        messageInput.blur();
+      }
+    }
     function showToast(message) {
       toastElement.textContent = message;
       toastElement.classList.add("visible");
@@ -852,6 +883,9 @@
     let lookX = 0;
     let lookY = 0;
     let excitedUntil = 0;
+    let actionTilt = 0;
+    let actionTiltUntil = 0;
+    let currentRoom = "home";
 
     canvas.addEventListener("pointermove", (event) => {
       const rect = canvas.getBoundingClientRect();
@@ -861,18 +895,24 @@
       lookY = (y - 0.5) * 0.10;
     });
     canvas.addEventListener("pointerleave", () => { lookX = 0; lookY = 0; });
-    canvas.addEventListener("click", () => { excitedUntil = performance.now() + 800; });
+    canvas.addEventListener("click", () => {
+      excitedUntil = performance.now() + 950;
+      actionTilt = -0.08;
+      actionTiltUntil = performance.now() + 850;
+      showGameBubble("Boop. I noticed that.");
+    });
 
     const clock = new THREE.Clock();
     function animate() {
       requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
       const now = performance.now();
-      milo.position.y = 0.015 + Math.sin(t * 2.1) * (speaking ? 0.045 : 0.018);
-      milo.rotation.y = Math.sin(t * 0.55) * 0.055;
+      const celebrating = now < excitedUntil;
+      milo.position.y = 0.015 + Math.sin(t * 2.1) * (speaking ? 0.045 : 0.018) + (celebrating ? Math.max(0, Math.sin(t * 17)) * 0.055 : 0);
+      milo.rotation.y = Math.sin(t * 0.55) * 0.055 + (celebrating ? Math.sin(t * 13) * 0.035 : 0);
       headPivot.rotation.y += (lookX - headPivot.rotation.y) * 0.035;
       headPivot.rotation.x += ((-lookY + (speaking ? Math.sin(t * 5.7) * 0.035 : 0)) - headPivot.rotation.x) * 0.04;
-      headPivot.rotation.z = Math.sin(t * 0.9) * 0.018;
+      headPivot.rotation.z = Math.sin(t * 0.9) * 0.018 + (now < actionTiltUntil ? actionTilt : 0);
       tailPivot.rotation.x = Math.sin(t * (speaking ? 12 : 3.3)) * (speaking ? 0.28 : 0.1);
       tailPivot.rotation.z = Math.cos(t * (speaking ? 10 : 2.9)) * (speaking ? 0.22 : 0.07);
       earLeft.rotation.z = 0.48 + Math.sin(t * 2.0) * 0.025 + (speaking ? Math.sin(t * 9) * 0.06 : 0);
@@ -1228,6 +1268,78 @@
         : '<path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path>';
       showToast(muted ? "Spoken replies muted." : "Spoken replies enabled.");
     });
+
+    function switchRoom(mode) {
+      currentRoom = mode === "lab" ? "lab" : "home";
+      roomGroup.visible = currentRoom === "home";
+      labGroup.visible = currentRoom === "lab";
+      const isLab = currentRoom === "lab";
+      if (roomToggle) {
+        const label = roomToggle.querySelector("span");
+        if (label) label.textContent = isLab ? "HOME" : "LAB";
+        roomToggle.setAttribute("aria-label", isLab ? "Return to Milo's living room" : "Switch to the science room");
+      }
+      if (labToggleBottom) {
+        const label = labToggleBottom.querySelector(".action-label");
+        if (label) label.textContent = isLab ? "HOME" : "LAB";
+        labToggleBottom.setAttribute("aria-label", isLab ? "Return to the living room" : "Switch to the science room");
+      }
+      showGameBubble(isLab
+        ? "Welcome to my lab. Please don't touch the mystery bubbles."
+        : "Back home. I was definitely doing something important.");
+    }
+
+    function playMiloReaction(message, tilt, duration = 1450) {
+      const now = performance.now();
+      excitedUntil = now + duration;
+      actionTilt = tilt;
+      actionTiltUntil = now + Math.min(duration, 950);
+      showGameBubble(message);
+      speak(message);
+    }
+
+    if (chatToggle) {
+      chatToggle.addEventListener("click", () => {
+        openChatPanel(!chatPanel.classList.contains("game-chat-open"));
+      });
+    }
+    if (chatClose) chatClose.addEventListener("click", () => openChatPanel(false));
+    if (roomToggle) roomToggle.addEventListener("click", () => switchRoom(currentRoom === "lab" ? "home" : "lab"));
+    if (labToggleBottom) labToggleBottom.addEventListener("click", () => switchRoom(currentRoom === "lab" ? "home" : "lab"));
+
+    if (petButton) {
+      petButton.addEventListener("click", () => {
+        playMiloReaction("Okay, okay. That was... actually pretty nice.", -0.16, 1350);
+      });
+    }
+    if (tickleButton) {
+      tickleButton.addEventListener("click", () => {
+        playMiloReaction("HEY! Personal space, human! Hah—stop it!", 0.2, 1950);
+      });
+    }
+    if (phoneButton) {
+      phoneButton.addEventListener("click", () => {
+        openChatPanel(true);
+        showGameBubble("You called? Alright, tell me what's going on.");
+        speak("You called? Alright, tell me what's going on.");
+      });
+    }
+    if (gameTalkButton) {
+      gameTalkButton.addEventListener("click", () => {
+        openChatPanel(true);
+        window.setTimeout(() => {
+          if (talkButton) talkButton.click();
+          else messageInput.focus();
+        }, 220);
+      });
+    }
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && chatPanel.classList.contains("game-chat-open")) {
+        openChatPanel(false);
+      }
+    });
+
+    // The chat drawer starts closed so the 3D pet is the main screen.
 
     document.getElementById("clearButton").addEventListener("click", () => {
       conversation.length = 0;
