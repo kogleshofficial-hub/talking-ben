@@ -1,0 +1,10 @@
+{
+  "name": "milo-3d-ai-dog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "An original, browser-based 3D character with AI conversation and voice input/output",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
