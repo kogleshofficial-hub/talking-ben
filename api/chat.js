@@ -53,6 +53,13 @@ function extractText(data) {
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
+  if (req.method === "GET") {
+    return json(res, 200, {
+      configured: Boolean(process.env.OPENAI_API_KEY),
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini"
+    });
+  }
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return json(res, 405, { error: "Use POST to send a message." });
