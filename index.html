@@ -524,12 +524,60 @@
       mouth: new THREE.MeshStandardMaterial({ color: 0x3c2021, roughness: 0.7 }),
       scarf: new THREE.MeshStandardMaterial({ color: 0x50cbb2, roughness: 0.48, metalness: 0.02 }),
       scarfLight: new THREE.MeshStandardMaterial({ color: 0x9ff1d9, roughness: 0.55 }),
-      floor: new THREE.MeshStandardMaterial({ color: 0x243845, roughness: 0.95 }),
+      floor: new THREE.MeshStandardMaterial({ color: 0xa97b51, roughness: 0.92 }),
       platform: new THREE.MeshStandardMaterial({ color: 0x334d59, roughness: 0.54, metalness: 0.22 }),
       propBlue: new THREE.MeshStandardMaterial({ color: 0x6498bb, roughness: 0.35, metalness: 0.12 }),
       propPink: new THREE.MeshStandardMaterial({ color: 0x9e8ed3, roughness: 0.45 }),
-      propGlass: new THREE.MeshStandardMaterial({ color: 0x7be1c3, roughness: 0.25, metalness: 0.08, transparent: true, opacity: 0.68 })
+      propGlass: new THREE.MeshStandardMaterial({ color: 0x7be1c3, roughness: 0.25, metalness: 0.08, transparent: true, opacity: 0.68 }),
+      wallpaper: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.98 }),
+      labWall: new THREE.MeshStandardMaterial({ color: 0xc9e1de, roughness: 0.93 }),
+      chair: new THREE.MeshStandardMaterial({ color: 0x7f657f, roughness: 0.88 }),
+      chairLight: new THREE.MeshStandardMaterial({ color: 0x9b8294, roughness: 0.88 }),
+      wood: new THREE.MeshStandardMaterial({ color: 0x9d633c, roughness: 0.84 }),
+      woodLight: new THREE.MeshStandardMaterial({ color: 0xc88d58, roughness: 0.8 }),
+      woodDark: new THREE.MeshStandardMaterial({ color: 0x68452f, roughness: 0.9 }),
+      cream: new THREE.MeshStandardMaterial({ color: 0xffedc6, roughness: 0.8 }),
+      paper: new THREE.MeshStandardMaterial({ color: 0xf0e2bf, roughness: 0.95 }),
+      frame: new THREE.MeshStandardMaterial({ color: 0x785039, roughness: 0.55 }),
+      phone: new THREE.MeshStandardMaterial({ color: 0x4e9a87, roughness: 0.36, metalness: 0.05 }),
+      phoneLight: new THREE.MeshStandardMaterial({ color: 0x8bd7b4, roughness: 0.42 }),
+      rug: new THREE.MeshStandardMaterial({ color: 0xc9a56a, roughness: 0.98 }),
+      labBench: new THREE.MeshStandardMaterial({ color: 0x97afa6, roughness: 0.83 }),
+      glassGreen: new THREE.MeshStandardMaterial({ color: 0x81c9a6, roughness: 0.24, transparent: true, opacity: 0.82 }),
+      glassAmber: new THREE.MeshStandardMaterial({ color: 0xe6a85f, roughness: 0.24, transparent: true, opacity: 0.82 }),
+      wallAccent: new THREE.MeshStandardMaterial({ color: 0xb9cf89, roughness: 0.94 })
     };
+
+    // A custom, repeating leafy motif creates a cozy room without using any game screenshot or branded texture.
+    const wallpaperCanvas = document.createElement("canvas");
+    wallpaperCanvas.width = 512;
+    wallpaperCanvas.height = 512;
+    const wallpaperCtx = wallpaperCanvas.getContext("2d");
+    wallpaperCtx.fillStyle = "#d9e7b0";
+    wallpaperCtx.fillRect(0, 0, 512, 512);
+    wallpaperCtx.strokeStyle = "#b2cf87";
+    wallpaperCtx.lineWidth = 5;
+    for (let x = -64; x < 576; x += 128) {
+      for (let y = -64; y < 576; y += 128) {
+        wallpaperCtx.beginPath();
+        wallpaperCtx.moveTo(x + 64, y + 4);
+        wallpaperCtx.bezierCurveTo(x + 128, y + 34, x + 126, y + 92, x + 64, y + 124);
+        wallpaperCtx.bezierCurveTo(x + 4, y + 92, x, y + 34, x + 64, y + 4);
+        wallpaperCtx.stroke();
+        wallpaperCtx.beginPath();
+        wallpaperCtx.moveTo(x + 64, y + 26);
+        wallpaperCtx.lineTo(x + 64, y + 100);
+        wallpaperCtx.moveTo(x + 28, y + 54);
+        wallpaperCtx.lineTo(x + 64, y + 69);
+        wallpaperCtx.lineTo(x + 98, y + 49);
+        wallpaperCtx.stroke();
+      }
+    }
+    const wallpaperTexture = new THREE.CanvasTexture(wallpaperCanvas);
+    wallpaperTexture.colorSpace = THREE.SRGBColorSpace;
+    wallpaperTexture.anisotropy = 4;
+    mats.wallpaper.map = wallpaperTexture;
+    mats.wallpaper.needsUpdate = true;
 
     function addMesh(geometry, material, parent, position, scale, rotation) {
       const mesh = new THREE.Mesh(geometry, material);
@@ -545,29 +593,139 @@
       return addMesh(new THREE.SphereGeometry(1, 28, 20), material, parent, position, scale, rotation);
     }
 
-    const floor = addMesh(new THREE.CircleGeometry(9, 72), mats.floor, scene, [0, -0.03, -0.3], [1, 1, 1], [-Math.PI / 2, 0, 0]);
+    // Shared floor plus two original scenes: Milo's cozy room and a playful science nook.
+    const floor = addMesh(
+      new THREE.PlaneGeometry(28, 24), mats.floor, scene,
+      [0, -0.025, -0.25], [1, 1, 1], [-Math.PI / 2, 0, 0]
+    );
     floor.receiveShadow = true;
 
-    const platform = addMesh(new THREE.CylinderGeometry(1.48, 1.62, 0.18, 64), mats.platform, scene, [0, 0.02, 0], [1, 1, 1]);
-    platform.castShadow = false;
-    addMesh(new THREE.TorusGeometry(1.48, 0.018, 8, 72), mats.scarf, scene, [0, 0.12, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
-    addMesh(new THREE.TorusGeometry(1.19, 0.012, 8, 72), mats.propBlue, scene, [0, 0.125, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
+    // Wide stylized wood seams, drawn as thin inlaid lines on the floor.
+    const floorSeamMaterial = new THREE.MeshStandardMaterial({ color: 0x875c3f, roughness: 1 });
+    for (let z = -7; z < 8; z += 0.9) {
+      addMesh(new THREE.BoxGeometry(26, 0.012, 0.018), floorSeamMaterial, scene, [0, -0.006, z], [1, 1, 1]);
+    }
 
-    // Small original lab props give the scene depth without using copied game assets.
-    function addFlask(x, y, z, material, size) {
+    const roomGroup = new THREE.Group();
+    scene.add(roomGroup);
+    const labGroup = new THREE.Group();
+    labGroup.visible = false;
+    scene.add(labGroup);
+
+    // Living room wall and skirting.
+    addMesh(new THREE.PlaneGeometry(24, 11), mats.wallpaper, roomGroup, [0, 5.35, -3.6], [1, 1, 1]);
+    addMesh(new THREE.BoxGeometry(24, 0.28, 0.17), mats.woodDark, roomGroup, [0, 0.12, -3.42], [1, 1, 1]);
+    addMesh(new THREE.BoxGeometry(24, 0.09, 0.19), mats.woodLight, roomGroup, [0, 0.29, -3.4], [1, 1, 1]);
+
+    // Milo's own framed portrait: deliberately abstract and original.
+    const portrait = new THREE.Group();
+    portrait.position.set(-2.5, 3.05, -3.38);
+    roomGroup.add(portrait);
+    addMesh(new THREE.BoxGeometry(0.98, 1.18, 0.12), mats.frame, portrait, [0, 0, 0], [1, 1, 1]);
+    addMesh(new THREE.BoxGeometry(0.78, 0.97, 0.045), mats.cream, portrait, [0, 0, 0.074], [1, 1, 1]);
+    sphere(portrait, mats.chairLight, [0, 0.02, 0.12], [0.28, 0.31, 0.045]);
+    sphere(portrait, mats.fur, [0, -0.07, 0.17], [0.24, 0.27, 0.06]);
+    sphere(portrait, mats.furDark, [-0.2, 0.16, 0.17], [0.08, 0.18, 0.04], [0,0,-0.45]);
+    sphere(portrait, mats.furDark, [0.2, 0.16, 0.17], [0.08, 0.18, 0.04], [0,0,0.45]);
+    sphere(portrait, mats.eye, [-0.09, 0.02, 0.235], [0.025, 0.035, 0.014]);
+    sphere(portrait, mats.eye, [0.09, 0.02, 0.235], [0.025, 0.035, 0.014]);
+    sphere(portrait, mats.scarf, [0, -0.25, 0.22], [0.21, 0.07, 0.025]);
+
+    // The oversized plum armchair gives the character a cozy place in the room.
+    const chairGroup = new THREE.Group();
+    chairGroup.position.set(0, 0, -0.72);
+    roomGroup.add(chairGroup);
+    sphere(chairGroup, mats.chair, [0, 1.62, -0.2], [1.13, 1.38, 0.38]);
+    sphere(chairGroup, mats.chairLight, [0, 1.58, 0.095], [0.85, 1.05, 0.13]);
+    sphere(chairGroup, mats.chair, [0, 0.69, 0.26], [1.05, 0.3, 0.68]);
+    sphere(chairGroup, mats.chairLight, [0, 0.77, 0.3], [0.84, 0.19, 0.55]);
+    sphere(chairGroup, mats.chair, [-0.91, 0.99, 0.1], [0.28, 0.49, 0.55], [0,0,-0.10]);
+    sphere(chairGroup, mats.chair, [0.91, 0.99, 0.1], [0.28, 0.49, 0.55], [0,0,0.10]);
+    for (const x of [-0.72, 0.72]) {
+      for (const z of [-0.18, 0.55]) {
+        addMesh(new THREE.CylinderGeometry(0.065, 0.075, 0.45, 12), mats.woodDark, chairGroup, [x, 0.24, z], [1,1,1]);
+      }
+    }
+    // Button-tuft accents on the chair back.
+    for (const p of [[-0.38,1.82,0.15],[0,1.95,0.15],[0.38,1.82,0.15],[-0.38,1.38,0.15],[0,1.48,0.16],[0.38,1.38,0.15]]) {
+      sphere(chairGroup, mats.woodLight, p, [0.035,0.035,0.018]);
+    }
+
+    // Side table and a distinctive mint desk phone (not copied from an existing game's prop).
+    const sideTable = new THREE.Group();
+    sideTable.position.set(2.15, 0, -0.65);
+    roomGroup.add(sideTable);
+    addMesh(new THREE.BoxGeometry(1.15, 0.15, 0.8), mats.wood, sideTable, [0, 0.82, 0], [1,1,1]);
+    addMesh(new THREE.BoxGeometry(1.04, 0.055, 0.7), mats.woodLight, sideTable, [0, 0.91, 0], [1,1,1]);
+    for (const x of [-0.43,0.43]) {
+      for (const z of [-0.27,0.27]) {
+        addMesh(new THREE.BoxGeometry(0.085,0.78,0.085), mats.woodDark, sideTable, [x,0.42,z], [1,1,1]);
+      }
+    }
+    const deskPhone = new THREE.Group();
+    deskPhone.position.set(0.02, 1.0, 0.02);
+    sideTable.add(deskPhone);
+    addMesh(new THREE.BoxGeometry(0.48,0.11,0.38), mats.phone, deskPhone, [0,0.01,0], [1,1,1], [-0.08,0,0]);
+    addMesh(new THREE.BoxGeometry(0.24,0.035,0.18), mats.phoneLight, deskPhone, [0,0.079,0.01], [1,1,1]);
+    for (let x = -1; x <= 1; x++) {
+      for (let y = -1; y <= 1; y++) {
+        sphere(deskPhone, mats.cream, [x*0.058,0.104,y*0.046], [0.018,0.009,0.014]);
+      }
+    }
+    const handsetCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.22,0.18,0.0),
+      new THREE.Vector3(-0.15,0.23,0.02),
+      new THREE.Vector3(0,0.25,0.02),
+      new THREE.Vector3(0.15,0.23,0.02),
+      new THREE.Vector3(0.22,0.18,0.0)
+    ]);
+    addMesh(new THREE.TubeGeometry(handsetCurve,18,0.035,8,false), mats.cream, deskPhone, [0,0,0], [1,1,1]);
+    sphere(deskPhone,mats.cream,[-0.22,0.18,0],[0.065,0.04,0.065]);
+    sphere(deskPhone,mats.cream,[0.22,0.18,0],[0.065,0.04,0.065]);
+    const cordCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.22,0.17,0),
+      new THREE.Vector3(0.31,0.1,0.02),
+      new THREE.Vector3(0.28,-0.04,0.02),
+      new THREE.Vector3(0.36,-0.08,0.02)
+    ]);
+    addMesh(new THREE.TubeGeometry(cordCurve,16,0.012,5,false), mats.woodDark, deskPhone, [0,0,0], [1,1,1]);
+
+    // A flat oval rug ties the character to the wooden floor.
+    addMesh(new THREE.CircleGeometry(1,64), mats.rug, roomGroup, [0,0.006,0.55], [2.4,1.35,1], [-Math.PI/2,0,0]);
+    addMesh(new THREE.CircleGeometry(1,64), mats.cream, roomGroup, [0,0.009,0.55], [2.12,1.12,1], [-Math.PI/2,0,0]);
+
+    // The alternate lab is a separate environment, not an overlay on the living room.
+    addMesh(new THREE.PlaneGeometry(24,11), mats.labWall, labGroup, [0,5.35,-3.6], [1,1,1]);
+    addMesh(new THREE.BoxGeometry(24,0.25,0.18), mats.woodDark, labGroup, [0,0.12,-3.42], [1,1,1]);
+    addMesh(new THREE.BoxGeometry(3.2,1.65,0.13), mats.labBench, labGroup, [-2.0,3.55,-3.38], [1,1,1]);
+    addMesh(new THREE.BoxGeometry(2.95,1.42,0.06), mats.paper, labGroup, [-2.0,3.55,-3.28], [1,1,1]);
+    // A colorful abstract formula board; marks are simple geometry rather than copied UI art.
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 6; col++) {
+        const tileMaterial = (row + col) % 3 === 0 ? mats.propBlue : ((row + col) % 3 === 1 ? mats.glassGreen : mats.propPink);
+        addMesh(new THREE.BoxGeometry(0.28,0.22,0.03), tileMaterial, labGroup, [-3.15 + col*0.45,4.0 - row*0.32,-3.23], [1,1,1]);
+      }
+    }
+    addMesh(new THREE.BoxGeometry(4.4,0.20,0.85), mats.labBench, labGroup, [0,1.24,-0.8], [1,1,1]);
+    addMesh(new THREE.BoxGeometry(4.05,0.12,0.7), mats.cream, labGroup, [0,1.38,-0.78], [1,1,1]);
+    for (const x of [-1.75,1.75]) {
+      addMesh(new THREE.BoxGeometry(0.17,1.18,0.55), mats.woodDark, labGroup, [x,0.62,-0.8], [1,1,1]);
+    }
+    function addFlask(x,y,z,material,size,parent) {
       const group = new THREE.Group();
-      group.position.set(x, y, z);
-      scene.add(group);
-      addMesh(new THREE.SphereGeometry(size * 0.42, 20, 16), material, group, [0, 0, 0], [1, 1, 0.78]);
-      addMesh(new THREE.CylinderGeometry(size * 0.13, size * 0.16, size * 0.5, 16), material, group, [0, size * 0.43, 0], [1, 1, 1]);
-      addMesh(new THREE.CylinderGeometry(size * 0.15, size * 0.15, size * 0.08, 16), mats.furLight, group, [0, size * 0.72, 0], [1, 1, 1]);
+      group.position.set(x,y,z);
+      parent.add(group);
+      addMesh(new THREE.SphereGeometry(size*0.42,20,16), material, group, [0,0,0], [1,1,0.78]);
+      addMesh(new THREE.CylinderGeometry(size*0.13,size*0.16,size*0.5,16), material, group, [0,size*0.43,0], [1,1,1]);
+      addMesh(new THREE.CylinderGeometry(size*0.15,size*0.15,size*0.08,16), mats.cream, group, [0,size*0.72,0], [1,1,1]);
       group.rotation.z = x < 0 ? 0.12 : -0.1;
     }
-    addFlask(-2.05, 1.0, -1.5, mats.propBlue, 0.62);
-    addFlask(2.08, 0.94, -1.4, mats.propPink, 0.55);
-    addMesh(new THREE.BoxGeometry(0.86, 0.23, 0.42), mats.platform, scene, [-2.05, 0.4, -1.48], [1, 1, 1]);
-    addMesh(new THREE.BoxGeometry(0.75, 0.19, 0.38), mats.propBlue, scene, [-2.08, 0.6, -1.52], [1, 1, 1]);
-    addMesh(new THREE.BoxGeometry(0.74, 0.19, 0.38), mats.propPink, scene, [2.08, 0.35, -1.46], [1, 1, 1]);
+    addFlask(-1.35,1.58,-0.6,mats.glassGreen,0.72,labGroup);
+    addFlask(0,1.59,-0.65,mats.glassAmber,0.66,labGroup);
+    addFlask(1.35,1.58,-0.6,mats.propBlue,0.7,labGroup);
+    for (let i = 0; i < 4; i++) {
+      addMesh(new THREE.CylinderGeometry(0.06,0.06,0.42,16), i % 2 ? mats.glassGreen : mats.glassAmber, labGroup, [-2.35+i*0.22,1.75,-0.58], [1,1,1]);
+    }
 
     const dustMaterial = new THREE.MeshBasicMaterial({ color: 0x8fe4d0, transparent: true, opacity: 0.46 });
     const dust = [];
