@@ -1,51 +1,54 @@
 # Milo — a 3D AI dog
 
-An original, browser-based 3D character prototype with voice input, natural AI responses, speech output, and interactive idle/speaking animations.
+Milo is an original browser-based 3D character experiment by Koglesh R. Murugan. It pairs a procedural Three.js dog with an open-weight language model that runs locally in the visitor's browser.
 
-> This is an independent fan-made technical experiment. It is not affiliated with or endorsed by Outfit7. It does not include Talking Ben's proprietary 3D model, textures, audio, code, or other assets.
+## The $0 inference design
 
-## What works in this starter
+- **No paid AI inference API. No AI API key. No monthly inference credits.**
+- WebLLM runs the language model on the visitor's own device using WebGPU.
+- The first visit downloads the selected model and supporting runtime assets. This can be a large download; the browser may cache model files for later visits.
+- After assets are downloaded, text generation runs on the device rather than calling an AI inference server.
+- Browser speech synthesis speaks replies using available system voices. Voice recognition uses the browser's built-in Web Speech API where supported; typed chat remains available.
+- The default model is SmolLM2-360M-Instruct-q4f32_1-MLC, selected to keep resource requirements comparatively small. Its responses are less capable than larger cloud models.
 
-- A procedural Three.js character scene built from original geometry (no copied model files).
-- Responsive UI for mobile and desktop.
-- Voice input via the browser's Web Speech API when supported, plus typed input as a fallback.
-- Open-ended AI replies through a server-side API route.
-- Spoken replies using the browser's speech synthesis, with basic mouth/head animation while talking.
-- Short in-memory conversation context within the current page session.
-- Basic server-side input limits, output limits, and best-effort per-instance rate limiting.
+**Important:** this avoids per-message AI charges, but nobody can guarantee that every browser, CDN, hosting platform, or public model download will remain free and available forever. The public model weights may be downloaded from Hugging Face's file hosting; Milo does not call Hugging Face Inference Providers, does not use their inference credits, and does not require a Hugging Face token. WebLLM's runtime assets are also fetched from its public distribution locations.
 
-## Requirements
+## Device compatibility
 
-- A Vercel account to deploy (or another host that supports Vercel-style /api functions).
-- An OpenAI API key with API billing enabled. ChatGPT subscriptions and API billing are separate.
-- A modern browser. Speech recognition support varies by browser; typed chat remains available.
+WebLLM needs a browser/device with working WebGPU and enough available GPU memory. Some mobile devices and browser/GPU combinations may fail even if they expose WebGPU. If that happens, Milo reports the limitation instead of secretly switching to a paid cloud endpoint. The first model download may take several minutes on a slow connection.
 
-## Run / deploy
+Test on target Android phones and desktop browsers before promoting it widely. This prototype has not yet been performance-tested on every device.
 
-1. Import this repository into Vercel.
-2. In Project → Settings → Environment Variables, add:
-   - OPENAI_API_KEY: your API key (server-side only; never put it in frontend code).
-   - Optional OPENAI_MODEL: model name enabled for your API project. The default is gpt-4.1-mini.
-3. Deploy.
-4. Open the deployed site, allow microphone permission, and tap Talk to Milo. If voice recognition is not supported, type in the chat box instead.
+## Deploy
 
-For local development, install Node.js and the Vercel CLI, then run vercel dev. Do not commit .env.local or any API key.
+1. Deploy this repository as a static site (it contains index.html).
+2. No OPENAI_API_KEY or other AI credentials are required.
+3. Open the deployed page over HTTPS.
+4. Send a message. Milo loads the local WebLLM runtime and model when the first message is sent.
+5. If WebGPU is unavailable, use a supported browser/device or use Milo's 3D scene as a visual demo.
 
-## Safety, cost, and privacy notes
+For local development, install Node.js and the Vercel CLI, then run `vercel dev`. Do not add a paid inference API as an automatic fallback if maintaining a $0 inference promise matters to you.
 
-- Each AI request can incur API charges. Set usage alerts/limits in the API provider dashboard before sharing publicly.
-- The API route includes small request/response limits and in-memory rate limiting. That limit is best-effort and is not a substitute for a shared rate limiter or abuse protection for a viral public launch.
-- Microphone use requires browser permission. Browser speech recognition may send audio to the browser vendor's recognition service; check your browser/provider settings. The app does not save microphone recordings.
-- Conversation text is kept in the page's memory for the current session and is sent to the configured AI provider when you submit a message.
-- Browser speech synthesis uses voices available on the user's device; it is not the original Talking Ben voice.
-- This prototype is not guaranteed error-free and should be tested across target phones and browsers before public promotion.
+## What's included
 
-## Roadmap
+- Responsive dark interface for phones and desktop
+- Procedural Three.js dog scene: idle motion, blinks, head and tail movement, simple speech-mouth animation
+- Local WebLLM language-model initialization with download progress messages
+- Short in-memory conversation history
+- Browser speech recognition (when available), browser speech synthesis, and typed chat
+- Share button, quick prompts, and error/status states
+- No user account required for AI inference
 
-1. Validate mobile microphone behavior and 3D performance.
-2. Add real rigged character assets created in Blender or licensed from a suitable source.
-3. Add better viseme-based lip sync, blinking, expression states, and interruptible voice playback.
-4. Add shared rate limiting, analytics with consent, and operational monitoring before exposing an API-backed public demo.
-5. Commission or license any art, music, or voices needed for a commercial release.
+## Next upgrades
+
+1. Test WebGPU support and memory use on real mobile devices; adjust the model size if needed.
+2. Improve streaming replies and interruptible voice playback.
+3. Upgrade to a rigged, original 3D character and phoneme/viseme lip sync.
+4. Add accessibility, privacy messaging, performance monitoring, and an original licensed voice/art package.
+5. If sharing widely, avoid claiming every device supports local AI; make incompatibility clear before the model download.
+
+## License / identity note
+
+Milo is an independent experiment and is not affiliated with or endorsed by Outfit7. It does not include Talking Ben's proprietary 3D model, textures, audio, or other protected assets.
 
 Created by Koglesh R. Murugan.
